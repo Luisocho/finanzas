@@ -1,0 +1,598 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2513
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 import React, \{ useState, useEffect, useRef \} from 'react';\
+// Eliminamos los imports de Chart y XLSX ya que se cargan globalmente en el HTML\
+// import Chart from 'chart.js/auto';\
+// import * as XLSX from 'xlsx';\
+\
+// Aseg\'farate de que Chart.js y SheetJS (XLSX) est\'e9n cargados globalmente en tu archivo HTML\
+// a trav\'e9s de etiquetas <script> ANTES de que se ejecute este c\'f3digo React.\
+// Por ejemplo, en la secci\'f3n <head> o al inicio del <body> de tu HTML:\
+// <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\
+// <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>\
+// <script src="https://unpkg.com/react/umd/react.development.js"></script>\
+// <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>\
+// <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>\
+// Luego, tu script de la aplicaci\'f3n React:\
+// <script type="text/babel" src="App.jsx"></script>\
+\
+\
+// Funci\'f3n para obtener datos del LocalStorage\
+const getLocalStorageData = (key, defaultValue) => \{\
+  const data = localStorage.getItem(key);\
+  return data ? JSON.parse(data) : defaultValue;\
+\};\
+\
+// Funci\'f3n para guardar datos en el LocalStorage\
+const setLocalStorageData = (key, value) => \{\
+  localStorage.setItem(key, JSON.stringify(value));\
+\};\
+\
+// Datos hist\'f3ricos predefinidos basados en la imagen (Actualizados a 2025 y fechas de fin de mes para ingresos)\
+const historicalData = [\
+  \{ date: '2025-01-31', amount: 3576000, type: 'Ingreso', category: 'Trabajo Luis', description: 'Sueldo Enero' \},\
+  \{ date: '2025-01-20', amount: 660000, type: 'Ingreso', category: 'Otros', description: 'Venta online Enero' \},\
+  \{ date: '2025-01-25', amount: 950000, type: 'Gasto', category: 'Vivienda', description: 'Arriendo Enero' \},\
+  \{ date: '2025-01-26', amount: 665000, type: 'Gasto', category: 'Vivienda', description: 'EPM Enero' \},\
+  \{ date: '2025-01-27', amount: 340000, type: 'Gasto', category: 'Vivienda', description: 'Tigo, TV Enero' \},\
+  \{ date: '2025-01-28', amount: 613000, type: 'Gasto', category: 'Familia', description: 'Mercado Enero' \},\
+  \{ date: '2025-01-29', amount: 88000, type: 'Gasto', category: 'Familia', description: 'Restaurantes Enero' \},\
+  \{ date: '2025-01-30', amount: 175000, type: 'Gasto', category: 'Familia', description: 'Medicos / Remedios Enero' \},\
+  \{ date: '2025-01-31', amount: 400000, type: 'Gasto', category: 'Familia', description: 'Clases Ni\'f1os / Otros Enero' \},\
+  \{ date: '2025-01-31', amount: 115000, type: 'Gasto', category: 'Transporte', description: 'Uber / Taxis / Otros Enero' \},\
+  \{ date: '2025-01-31', amount: 240000, type: 'Gasto', category: 'Entretenimiento', description: 'Entretenimiento Enero' \},\
+  \{ date: '2025-01-31', amount: 650000, type: 'Gasto', category: 'Viajes', description: 'Pasajes / Comidad Enero' \},\
+\
+  \{ date: '2025-02-28', amount: 1296000, type: 'Ingreso', category: 'Trabajo Luis', description: 'Sueldo Febrero' \},\
+  \{ date: '2025-02-20', amount: 1015000, type: 'Ingreso', category: 'Otros', description: 'Venta online Febrero' \},\
+  \{ date: '2025-02-22', amount: 1000000, type: 'Ingreso', category: 'Ingresos Prestamos', description: 'Prestamo personal Febrero' \},\
+  \{ date: '2025-02-25', amount: 950000, type: 'Gasto', category: 'Vivienda', description: 'Arriendo Febrero' \},\
+  \{ date: '2025-02-26', amount: 685000, type: 'Gasto', category: 'Vivienda', description: 'EPM Febrero' \},\
+  \{ date: '2025-02-27', amount: 60000, type: 'Gasto', category: 'Vivienda', description: 'Tigo, TV Febrero' \},\
+  \{ date: '2025-02-28', amount: 786000, type: 'Gasto', category: 'Familia', description: 'Mercado Febrero' \},\
+  \{ date: '2025-02-29', amount: 253000, type: 'Gasto', category: 'Familia', description: 'Restaurantes Febrero' \},\
+  \{ date: '2025-02-29', amount: 130000, type: 'Gasto', category: 'Familia', description: 'Medicos / Remedios Febrero' \},\
+  \{ date: '2025-02-29', amount: 130000, type: 'Gasto', category: 'Mascotas', description: 'Chester y Toto Febrero' \},\
+  \{ date: '2025-02-29', amount: 225000, type: 'Gasto', category: 'Entretenimiento', description: 'Entretenimiento Febrero' \},\
+  \{ date: '2025-02-29', amount: 32000, type: 'Gasto', category: 'Entretenimiento', description: 'Libros Febrero' \},\
+  \{ date: '2025-02-29', amount: 60000, type: 'Gasto', category: 'Entretenimiento', description: 'Bares Febrero' \},\
+\
+  \{ date: '2025-03-31', amount: 2112000, type: 'Ingreso', category: 'Trabajo Luis', description: 'Sueldo Marzo' \},\
+  \{ date: '2025-03-20', amount: 660000, type: 'Ingreso', category: 'Otros', description: 'Venta online Marzo' \},\
+  \{ date: '2025-03-22', amount: 1000000, type: 'Ingreso', category: 'Ingresos Prestamos', description: 'Prestamo personal Marzo' \},\
+  \{ date: '2025-03-25', amount: 870000, type: 'Gasto', category: 'Vivienda', description: 'EPM Marzo' \},\
+  \{ date: '2025-03-26', amount: 210000, type: 'Gasto', category: 'Vivienda', description: 'Empleada Marzo' \},\
+  \{ date: '2025-03-28', amount: 505000, type: 'Gasto', category: 'Familia', description: 'Mercado Marzo' \},\
+  \{ date: '2025-03-29', amount: 372000, type: 'Gasto', category: 'Familia', description: 'Restaurantes Marzo' \},\
+  \{ date: '2025-03-30', amount: 145000, type: 'Gasto', category: 'Transporte', description: 'Uber / Taxis / Otros Marzo' \},\
+  \{ date: '2025-03-31', amount: 185000, type: 'Gasto', category: 'Compras', description: 'Ropa Marzo' \},\
+  \{ date: '2025-03-31', amount: 175000, type: 'Gasto', category: 'Entretenimiento', description: 'Entretenimiento Marzo' \},\
+  \{ date: '2025-03-31', amount: 160000, type: 'Gasto', category: 'Entretenimiento', description: 'Libros Marzo' \},\
+  \{ date: '2025-03-31', amount: 1000000, type: 'Gasto', category: 'Prestamos', description: 'Tia Mercedes Marzo' \},\
+  \{ date: '2025-03-31', amount: 150000, type: 'Gasto', category: 'Prestamos', description: 'Intereses Marzo' \},\
+\
+  \{ date: '2025-04-30', amount: 1000000, type: 'Gasto', category: 'Prestamos', description: 'Tia Mercedes Abril' \},\
+  \{ date: '2025-04-30', amount: 100000, type: 'Gasto', category: 'Prestamos', description: 'Intereses Abril' \},\
+];\
+\
+\
+const App = () => \{\
+  const [transactions, setTransactions] = useState([]);\
+  const [date, setDate] = useState('');\
+  const [amount, setAmount] = useState('');\
+  const [type, setType] = useState('Gasto');\
+  const [category, setCategory] = useState('');\
+  const [description, setDescription] = useState('');\
+  const [filter, setFilter] = useState('all'); // 'all', 'day', 'month', 'year', 'custom'\
+  const [filterDate, setFilterDate] = useState('');\
+  const [filterMonth, setFilterMonth] = useState('');\
+  const [filterYear, setFilterYear] = useState('');\
+  const [filterStartDate, setFilterStartDate] = useState('');\
+  const [filterEndDate, setFilterEndDate] = useState('');\
+\
+  const incomeChartRef = useRef(null);\
+  const expenseChartRef = useRef(null);\
+  const incomeExpenseChartRef = useRef(null);\
+  let incomeChartInstance = null;\
+  let expenseChartInstance = null;\
+  let incomeExpenseChartInstance = null;\
+\
+  // Categor\'edas basadas en la imagen\
+  const categories = \{\
+    Ingreso: ['Trabajo Luis', 'Gashapon', 'Otros', 'Ingresos Prestamos'],\
+    Gasto: [\
+      'Arriendo', 'EPM', 'Empleada', 'Tigo, TV', 'Administracion', 'Colegio',\
+      'Mercado', 'Restaurantes', 'Prepagada', 'Medicos / Remedios', 'Peluqueria / U\'f1as',\
+      'Clases Ni\'f1os / Otros', 'Uber / Taxis / Otros', 'Viajes', 'Carro', 'Gasolina',\
+      'Chester y Toto', 'Cuido', 'Ropa', 'Inmobiliarios / Tecnologia', 'Regalos',\
+      'Entretenimiento', 'Libros', 'Cine', 'Bares', 'Sempli', 'Gloria',\
+      'Tia Mercedes', 'Abono Deudas', 'Intereses', 'Pasajes / Comidad', 'Alojamientos'\
+    ],\
+  \};\
+\
+  useEffect(() => \{\
+    // Cargar datos hist\'f3ricos y datos guardados al inicio\
+    const savedTransactions = getLocalStorageData('transactions', []);\
+    if (savedTransactions.length === 0) \{\
+      setTransactions(historicalData);\
+    \} else \{\
+      setTransactions(savedTransactions);\
+    \}\
+\
+    // Verificar si las librer\'edas est\'e1n cargadas poco despu\'e9s del montaje inicial\
+    setTimeout(() => \{\
+        if (typeof window.Chart === 'undefined') \{\
+            console.error("Error: Chart.js no est\'e1 cargado. Aseg\'farate de que la etiqueta <script> est\'e9 en tu HTML ANTES del script de la aplicaci\'f3n React.");\
+        \} else \{\
+            console.log("Chart.js cargado correctamente.");\
+        \}\
+        if (typeof window.XLSX === 'undefined') \{\
+             console.error("Error: SheetJS (XLSX) no est\'e1 cargado. Aseg\'farate de que la etiqueta <script> est\'e9 en tu HTML ANTES del script de la aplicaci\'f3n React.");\
+        \} else \{\
+             console.log("SheetJS (XLSX) cargado correctamente.");\
+        \}\
+    \}, 500); // Peque\'f1a demora para la verificaci\'f3n inicial\
+\
+\
+  \}, []);\
+\
+  useEffect(() => \{\
+    // Guardar transacciones en LocalStorage cada vez que cambian\
+    setLocalStorageData('transactions', transactions);\
+  \}, [transactions]);\
+\
+  useEffect(() => \{\
+    // Destruir instancias de Chart.js antes de crear nuevas\
+    return () => \{\
+      if (incomeChartInstance) incomeChartInstance.destroy();\
+      if (expenseChartInstance) expenseChartInstance.destroy();\
+      if (incomeExpenseChartInstance) incomeExpenseChartInstance.destroy();\
+    \};\
+  \}, []);\
+\
+  useEffect(() => \{\
+    // Actualizar gr\'e1ficas cuando cambian las transacciones o el filtro\
+    // A\'f1adimos una peque\'f1a demora para dar tiempo a Chart.js a cargarse si a\'fan no lo ha hecho\
+     const chartRenderTimer = setTimeout(() => \{\
+        renderCharts(filteredTransactions);\
+     \}, 100); // Peque\'f1a demora de 100ms\
+\
+     return () => clearTimeout(chartRenderTimer); // Limpiar el timer si el componente se desmonta o las dependencias cambian\
+\
+  \}, [transactions, filter, filterDate, filterMonth, filterYear, filterStartDate, filterEndDate]);\
+\
+\
+  const handleAddTransaction = (e) => \{\
+    e.preventDefault();\
+    if (!date || !amount || !type || !category || !description) \{\
+      alert('Por favor, complete todos los campos.');\
+      return;\
+    \}\
+\
+    const newTransaction = \{\
+      date,\
+      amount: parseFloat(amount),\
+      type,\
+      category,\
+      description,\
+    \};\
+\
+    setTransactions([...transactions, newTransaction]);\
+\
+    // Limpiar formulario\
+    setDate('');\
+    setAmount('');\
+    setCategory('');\
+    setDescription('');\
+  \};\
+\
+  const handleDeleteTransaction = (index) => \{\
+    const updatedTransactions = transactions.filter((_, i) => i !== index);\
+    setTransactions(updatedTransactions);\
+  \};\
+\
+  const filterTransactions = (trans) => \{\
+    switch (filter) \{\
+      case 'day':\
+        return trans.filter(t => t.date === filterDate);\
+      case 'month':\
+        return trans.filter(t => t.date.startsWith(filterMonth));\
+      case 'year':\
+        return trans.filter(t => t.date.startsWith(filterYear));\
+      case 'custom':\
+        return trans.filter(t => \{\
+          const transactionDate = new Date(t.date);\
+          const startDate = new Date(filterStartDate);\
+          const endDate = new Date(filterEndDate);\
+          return transactionDate >= startDate && transactionDate <= endDate;\
+        \});\
+      case 'all':\
+      default:\
+        return trans;\
+    \}\
+  \};\
+\
+  const filteredTransactions = filterTransactions(transactions);\
+\
+  const renderCharts = (dataToChart) => \{\
+    // Destruir instancias existentes antes de crear nuevas\
+    if (incomeChartInstance) incomeChartInstance.destroy();\
+    if (expenseChartInstance) expenseChartInstance.destroy();\
+    if (incomeExpenseChartInstance) incomeExpenseChartInstance.destroy();\
+\
+    // Verificar si Chart est\'e1 definido antes de usarlo\
+    if (typeof window.Chart === 'undefined') \{\
+        console.error("Chart.js no est\'e1 disponible para renderizar gr\'e1ficas.");\
+        return; // Salir si Chart.js no est\'e1 disponible\
+    \}\
+\
+\
+    const incomeData = dataToChart.filter(t => t.type === 'Ingreso');\
+    const expenseData = dataToChart.filter(t => t.type === 'Gasto');\
+\
+    // Gr\'e1fica de distribuci\'f3n por tipo de gasto\
+    const expenseCategories = \{\};\
+    expenseData.forEach(t => \{\
+      expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;\
+    \});\
+\
+    const expenseChartData = \{\
+      labels: Object.keys(expenseCategories),\
+      datasets: [\{\
+        data: Object.values(expenseCategories),\
+        backgroundColor: Object.keys(expenseCategories).map(() => `hsl($\{Math.random() * 360\}, 70%, 50%)`), // Colores aleatorios\
+      \}],\
+    \};\
+\
+    if (expenseChartRef.current) \{\
+      // Accedemos a Chart globalmente\
+      expenseChartInstance = new window.Chart(expenseChartRef.current, \{\
+        type: 'pie',\
+        data: expenseChartData,\
+        options: \{\
+          responsive: true,\
+          plugins: \{\
+            title: \{\
+              display: true,\
+              text: 'Distribuci\'f3n de Gastos por Categor\'eda',\
+            \},\
+          \},\
+        \},\
+      \});\
+    \}\
+\
+    // Gr\'e1fica de comparaci\'f3n de ingresos vs egresos\
+    const totalIncome = incomeData.reduce((sum, t) => sum + t.amount, 0);\
+    const totalExpense = expenseData.reduce((sum, t) => sum + t.amount, 0);\
+\
+    const incomeExpenseChartData = \{\
+      labels: ['Ingresos', 'Egresos'],\
+      datasets: [\{\
+        data: [totalIncome, totalExpense],\
+        backgroundColor: ['#4CAF50', '#9C27B0'], // Verde para ingresos, Morado para egresos\
+      \}],\
+    \};\
+\
+    if (incomeExpenseChartRef.current) \{\
+       // Accedemos a Chart globalmente\
+      incomeExpenseChartInstance = new window.Chart(incomeExpenseChartRef.current, \{\
+        type: 'bar',\
+        data: incomeExpenseChartData,\
+        options: \{\
+          responsive: true,\
+          plugins: \{\
+            title: \{\
+              display: true,\
+              text: 'Comparaci\'f3n de Ingresos vs Egresos',\
+            \},\
+          \},\
+          scales: \{\
+            y: \{\
+              beginAtZero: true,\
+            \},\
+          \},\
+        \},\
+      \});\
+    \}\
+  \};\
+\
+  const exportToExcel = () => \{\
+     // Verificar si XLSX est\'e1 definido antes de usarlo\
+    if (typeof window.XLSX === 'undefined') \{\
+        alert("La librer\'eda para exportar a Excel a\'fan no est\'e1 cargada. Int\'e9ntalo de nuevo en unos segundos.");\
+        console.error("SheetJS (XLSX) no est\'e1 disponible para exportar a Excel.");\
+        return; // Salir si XLSX no est\'e1 disponible\
+    \}\
+\
+    // Accedemos a XLSX globalmente\
+    const wb = window.XLSX.utils.book_new();\
+\
+    // Crear hojas por mes\
+    const months = [...new Set(transactions.map(t => t.date.substring(0, 7)))].sort(); // Obtener meses \'fanicos y ordenar\
+\
+    months.forEach(month => \{\
+      const monthTransactions = transactions.filter(t => t.date.startsWith(month));\
+      const data = [\
+        ['Fecha', 'Monto ($)', 'Tipo', 'Categor\'eda', 'Descripci\'f3n'],\
+        ...monthTransactions.map(t => [t.date, t.amount, t.type, t.category, t.description]),\
+      ];\
+      const ws = window.XLSX.utils.aoa_to_sheet(data);\
+      window.XLSX.utils.book_append_sheet(wb, ws, month);\
+    \});\
+\
+    // Crear hoja resumen\
+    const summaryData = [['Tipo', 'Total']];\
+    const totalIncome = transactions.filter(t => t.type === 'Ingreso').reduce((sum, t) => sum + t.amount, 0);\
+    const totalExpense = transactions.filter(t => t.type === 'Gasto').reduce((sum, t) => sum + t.amount, 0);\
+    summaryData.push(['Ingresos', totalIncome]);\
+    summaryData.push(['Egresos', totalExpense]);\
+\
+    const wsSummary = window.XLSX.utils.aoa_to_sheet(summaryData);\
+    window.XLSX.utils.book_append_sheet(wb, wsSummary, 'Resumen');\
+\
+    // Exportar archivo\
+    window.XLSX.writeFile(wb, 'control_gastos.xlsx');\
+  \};\
+\
+\
+  return (\
+    <div className="container mx-auto p-4">\
+      <h1 className="text-2xl font-bold mb-4">Control de Gastos Personales</h1>\
+\
+      \{/* Formulario de Ingreso */\}\
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">\
+        <h2 className="text-xl font-semibold mb-4">Registrar Transacci\'f3n</h2>\
+        <form onSubmit=\{handleAddTransaction\} className="grid grid-cols-1 md:grid-cols-2 gap-4">\
+          <div>\
+            <label className="block text-gray-700">Fecha:</label>\
+            <input\
+              type="date"\
+              value=\{date\}\
+              onChange=\{(e) => setDate(e.target.value)\}\
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              required\
+            />\
+          </div>\
+          <div>\
+            <label className="block text-gray-700">Monto ($):</label>\
+            <input\
+              type="number"\
+              value=\{amount\}\
+              onChange=\{(e) => setAmount(e.target.value)\}\
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              required\
+            />\
+          </div>\
+          <div>\
+            <label className="block text-gray-700">Tipo:</label>\
+            <select\
+              value=\{type\}\
+              onChange=\{(e) => \{\
+                setType(e.target.value);\
+                setCategory(''); // Limpiar categor\'eda al cambiar el tipo\
+              \}\}\
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              required\
+\
+            >\
+              <option value="Gasto">Gasto</option>\
+              <option value="Ingreso">Ingreso</option>\
+            </select>\
+          </div>\
+          <div>\
+            <label className="block text-gray-700">Categor\'eda:</label>\
+            <select\
+              value=\{category\}\
+              onChange=\{(e) => setCategory(e.target.value)\}\
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              required\
+            >\
+              <option value="">Seleccione una categor\'eda</option>\
+              \{(type === 'Ingreso' ? categories.Ingreso : categories.Gasto).map(cat => (\
+                <option key=\{cat\} value=\{cat\}>\{cat\}</option>\
+              ))\}\
+            </select>\
+          </div>\
+          <div className="md:col-span-2">\
+            <label className="block text-gray-700">Descripci\'f3n:</label>\
+            <input\
+              type="text"\
+              value=\{description\}\
+              onChange=\{(e) => setDescription(e.target.value)\}\
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              required\
+            />\
+          </div>\
+          <div className="md:col-span-2">\
+            <button\
+              type="submit"\
+              className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200"\
+            >\
+              Agregar Transacci\'f3n\
+            </button>\
+          </div>\
+        </form>\
+      </div>\
+\
+      \{/* Filtro por Periodo */\}\
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">\
+        <h2 className="text-xl font-semibold mb-4">Filtrar Transacciones</h2>\
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">\
+          <div>\
+            <label className="block text-gray-700">Periodo:</label>\
+            <select\
+              value=\{filter\}\
+              onChange=\{(e) => setFilter(e.target.value)\}\
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+            >\
+              <option value="all">Todos</option>\
+              <option value="day">D\'eda</option>\
+              <option value="month">Mes</option>\
+              <option value="year">A\'f1o</option>\
+              <option value="custom">Personalizado</option>\
+            </select>\
+          </div>\
+          \{filter === 'day' && (\
+            <div>\
+              <label className="block text-gray-700">Fecha:</label>\
+              <input\
+                type="date"\
+                value=\{filterDate\}\
+                onChange=\{(e) => setFilterDate(e.target.value)\}\
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              />\
+            </div>\
+          )\}\
+          \{filter === 'month' && (\
+            <div>\
+              <label className="block text-gray-700">Mes:</label>\
+              <input\
+                type="month"\
+                value=\{filterMonth\}\
+                onChange=\{(e) => setFilterMonth(e.target.value)\}\
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+              />\
+            </div>\
+          )\}\
+          \{filter === 'year' && (\
+            <div>\
+              <label className="block text-gray-700">A\'f1o:</label>\
+              <input\
+                type="number"\
+                value=\{filterYear\}\
+                onChange=\{(e) => setFilterYear(e.target.value)\}\
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+                placeholder="YYYY"\
+              />\
+            </div>\
+          )\}\
+          \{filter === 'custom' && (\
+            <>\
+              <div>\
+                <label className="block text-gray-700">Fecha Inicio:</label>\
+                <input\
+                  type="date"\
+                  value=\{filterStartDate\}\
+                  onChange=\{(e) => setFilterStartDate(e.target.value)\}\
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+                />\
+              </div>\
+              <div>\
+                <label className="block text-gray-700">Fecha Fin:</label>\
+                <input\
+                  type="date"\
+                  value=\{filterEndDate\}\
+                  onChange=\{(e) => setFilterEndDate(e.target.value)\}\
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"\
+                />\
+              </div>\
+            </>\
+          )\}\
+        </div>\
+      </div>\
+\
+\
+      \{/* Tabla de Transacciones */\}\
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">\
+        <h2 className="text-xl font-semibold mb-4">Transacciones</h2>\
+        <div className="overflow-x-auto">\
+          <table className="min-w-full bg-white">\
+            <thead>\
+              <tr>\
+                <th className="py-2 px-4 border-b text-left">Fecha</th>\
+                <th className="py-2 px-4 border-b text-left">Monto ($)</th>\
+                <th className="py-2 px-4 border-b text-left">Tipo</th>\
+                <th className="py-2 px-4 border-b text-left">Categor\'eda</th>\
+                <th className="py-2 px-4 border-b text-left">Descripci\'f3n</th>\
+                <th className="py-2 px-4 border-b text-left">Acciones</th>\
+              </tr>\
+            </thead>\
+            <tbody>\
+              \{filteredTransactions.map((transaction, index) => (\
+                <tr key=\{index\} className=\{transaction.type === 'Ingreso' ? 'text-green-600' : 'text-purple-600'\}>\
+                  <td className="py-2 px-4 border-b">\{transaction.date\}</td>\
+                  \{/* Formato del monto con separador de miles y sin decimales */\}\
+                  <td className="py-2 px-4 border-b">\{transaction.amount.toLocaleString('es-CO', \{ minimumFractionDigits: 0, maximumFractionDigits: 0 \})\}</td>\
+                  <td className="py-2 px-4 border-b">\{transaction.type\}</td>\
+                  <td className="py-2 px-4 border-b">\{transaction.category\}</td>\
+                  <td className="py-2 px-4 border-b">\{transaction.description\}</td>\
+                  <td className="py-2 px-4 border-b">\
+                    <button\
+                      onClick=\{() => handleDeleteTransaction(index)\}\
+                      className="text-red-600 hover:text-red-800"\
+                    >\
+                      Eliminar\
+                    </button>\
+                  </td>\
+                </tr>\
+              ))\}\
+            </tbody>\
+          </table>\
+        </div>\
+      </div>\
+\
+      \{/* Gr\'e1ficas */\}\
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">\
+        <h2 className="text-xl font-semibold mb-4">Gr\'e1ficas</h2>\
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">\
+          <div>\
+            <canvas ref=\{expenseChartRef\}></canvas>\
+          </div>\
+          <div>\
+            <canvas ref=\{incomeExpenseChartRef\}></canvas>\
+          </div>\
+        </div>\
+      </div>\
+\
+      \{/* Bot\'f3n de Exportar a Excel */\}\
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6 text-center">\
+        <button\
+          onClick=\{exportToExcel\}\
+          className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition duration-200"\
+        >\
+          Exportar a Excel\
+        </button>\
+      </div>\
+    </div>\
+  );\
+\};\
+\
+// Para que React funcione, necesitas un div ra\'edz en tu HTML (por ejemplo, <div id="root"></div>)\
+// y luego renderizar el componente App en ese div.\
+// Ejemplo b\'e1sico de c\'f3mo renderizar en un archivo HTML (aseg\'farate del orden de los scripts):\
+// <!DOCTYPE html>\
+// <html lang="es">\
+// <head>\
+//     <meta charset="UTF-8">\
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">\
+//     <title>Control de Gastos</title>\
+//     //     <script src="https://cdn.tailwindcss.com"></script>\
+//      <style>\
+//         /* Opcional: Estilos personalizados si son necesarios */\
+//         body \{\
+//             font-family: 'Inter', sans-serif;\
+//         \}\
+//     </style>\
+// </head>\
+// <body>\
+//     <div id="root"></div>\
+//\
+//     //     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>\
+//     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>\
+//\
+//     //     <script src="https://unpkg.com/react/umd/react.development.js"></script>\
+//     <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>\
+//     //     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>\
+//\
+//     //     <script type="text/babel" src="App.jsx"></script>\
+// </body>\
+// </html>\
+\
+\
+export default App;\
+}
